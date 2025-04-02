@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Mathematical Programming Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .result-card {
+            margin-bottom: 2rem;
+        }
+        .plot-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .plot-container img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url method %}">{{ method|title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Results</li>
+            </ol>
+        </nav>
+        
+        <header class="text-center mb-5">
+            <h1 class="display-4">Optimization Results</h1>
+            <p class="lead">{{ problem.title }}</p>
+        </header>
+        
+        <div class="card shadow-sm result-card">
+            <div class="card-header">
+                <h5 class="mb-0">Problem Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if method == 'simplex' or method == 'graphical' %}
+                    <h6>{{ problem_data.objective_type|title }}: {{ problem_data.objective_function }}</h6>
+                    <p>Subject to:</p>
+                    <ul>
+                        {% for constraint in problem_data.constraints %}
+                            <li>{{ constraint }}</li>
+                        {% endfor %}
+                        <li>All variables ≥ 0</li>
+                    </ul>
+                {% elif method == 'transportation' %}
+                    <h6>Transportation Problem</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Supply:</strong></p>
+                            <ul>
+                                {% for supply in problem_data.supply %}
+                                    <li>Source {{ forloop.counter }}: {{ supply }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Demand:</strong></p>
+                            <ul>
+                                {% for demand in problem_data.demand %}
+                                    <li>Destination {{ forloop.counter }}: {{ demand }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow-sm result-card">
+            <div class="card-header">
+                <h5 class="mb-0">Solution</h5>
+            </div>
+            <div class="card-body">
+                {% if solution.status == 'Optimal' %}
+                    <div class="alert alert-success">
+                        <strong>Status:</strong> Optimal solution found
+                    </div>
+                    
+                    {% if method == 'simplex' or method == 'graphical' %}
+                        <h6>Objective Value: {{ solution.objective_value|floatformat:4 }}</h6>
+                        <p><strong>Variable Values:</strong></p>
+                        <ul>
+                            {% for var_name, var_value in solution.variables.items %}
+                                <li>{{ var_name }} = {{ var_value|floatformat:4 }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% elif method == 'transportation' %}
+                        <h6>Total Transportation Cost: ${{ solution.total_cost|floatformat:2 }}</h6>
+                        <p><strong>Balanced Problem:</strong> {% if solution.is_balanced %}Yes{% else %}No (dummy source/destination added){% endif %}</p>
+                    {% endif %}
+                    
+                    {% if method == 'graphical' and solution.plot %}
+                        <div class="plot-container">
+                            <h6>Graphical Solution:</h6>
+                            <img src="data:image/png;base64,{{ solution.plot }}" alt="Graphical Solution" class="img-fluid">
+                        </div>
+                    {% endif %}
+                    
+                    {% if method == 'transportation' and solution.plot %}
+                        <div class="plot-container">
+                            <h6>Transportation Allocation:</h6>
+                            <img src="data:image/png;base64,{{ solution.plot }}" alt="Transportation Solution" class="img-fluid">
+                        </div>
+                    {% endif %}
+                    
+                {% else %}
+                    <div class="alert alert-warning">
+                        <strong>Status:</strong> {{ solution.status }}
+                    </div>
+                    <p>The problem could not be solved to optimality. Please check your constraints and try again.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{% url method %}" class="btn btn-primary">Solve Another Problem</a>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Back to Home</a>
+        </div>
+    </div>
+    
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p>Mathematical Programming Optimizer &copy; 2025</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

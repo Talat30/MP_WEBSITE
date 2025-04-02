@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Programming Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .method-card {
+            transition: transform 0.3s;
+            height: 100%;
+        }
+        .method-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-5">
+            <h1 class="display-4">Mathematical Programming Optimizer</h1>
+            <p class="lead">Solve optimization problems using different mathematical programming methods</p>
+        </header>
+        
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <!-- Simplex Method Card -->
+            <div class="col">
+                <div class="card method-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Simplex Method</h5>
+                        <p class="card-text">Solve linear programming problems with multiple variables and constraints using the Simplex algorithm.</p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item">Handles multiple variables</li>
+                            <li class="list-group-item">Supports equality and inequality constraints</li>
+                            <li class="list-group-item">Maximization and minimization problems</li>
+                        </ul>
+                        <a href="{% url 'simplex' %}" class="btn btn-primary">Use Simplex Method</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Graphical Method Card -->
+            <div class="col">
+                <div class="card method-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Graphical Method</h5>
+                        <p class="card-text">Visualize and solve linear programming problems with two variables using the graphical approach.</p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item">Visual representation of the feasible region</li>
+                            <li class="list-group-item">Limited to two variables</li>
+                            <li class="list-group-item">Includes objective function visualization</li>
+                        </ul>
+                        <a href="{% url 'graphical' %}" class="btn btn-primary">Use Graphical Method</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transportation Problem Card -->
+            <div class="col">
+                <div class="card method-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Transportation Problem</h5>
+                        <p class="card-text">Optimize the distribution of goods from sources to destinations while minimizing total transportation cost.</p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item">Balanced and unbalanced problems</li>
+                            <li class="list-group-item">Multiple sources and destinations</li>
+                            <li class="list-group-item">Visual allocation matrix</li>
+                        </ul>
+                        <a href="{% url 'transportation' %}" class="btn btn-primary">Use Transportation Method</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p>Mathematical Programming Optimizer &copy; 2025</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

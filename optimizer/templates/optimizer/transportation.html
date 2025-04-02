@@ -1,0 +1,371 @@
+<!-- {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transportation Problem - Mathematical Programming Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .cost-table td input {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Transportation Problem</li>
+            </ol>
+        </nav>
+        
+        <header class="text-center mb-5">
+            <h1 class="display-4">Transportation Problem</h1>
+            <p class="lead">Optimize the distribution of goods from sources to destinations</p>
+        </header>
+        
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" id="transportation-form">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="sources" class="form-label">Number of Sources:</label>
+                            <input type="number" id="sources" name="sources" class="form-control" min="1" max="10" value="3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="destinations" class="form-label">Number of Destinations:</label>
+                            <input type="number" id="destinations" name="destinations" class="form-control" min="1" max="10" value="4" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" id="generate-table" class="btn btn-outline-primary">Generate Table</button>
+                    </div>
+                    
+                    <div id="problem-table" style="display: none;">
+                        <div class="mb-4">
+                            <h5>Supply</h5>
+                            <div id="supply-container" class="row"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Demand</h5>
+                            <div id="demand-container" class="row"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Transportation Costs</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered cost-table" id="cost-table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                          
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Solve Problem</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Example</h5>
+            </div>
+            <div class="card-body">
+                <p>A company has 3 warehouses (sources) and needs to supply 4 retail stores (destinations).</p>
+                <p>Each warehouse has a limited supply, and each store has a specific demand.</p>
+                <p>The cost of shipping from each warehouse to each store varies.</p>
+                <p>The goal is to minimize the total transportation cost while meeting all demands.</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p>Mathematical Programming Optimizer &copy; 2025</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('generate-table').addEventListener('click', function() {
+            const sources = parseInt(document.getElementById('sources').value);
+            const destinations = parseInt(document.getElementById('destinations').value);
+            
+            if (sources < 1 || destinations < 1 || sources > 10 || destinations > 10) {
+                alert('Please enter valid numbers (1-10) for sources and destinations.');
+                return;
+            }
+            
+            const supplyContainer = document.getElementById('supply-container');
+            supplyContainer.innerHTML = '';
+            for (let i = 0; i < sources; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-2';
+                col.innerHTML = `
+                    <label class="form-label">Source ${i+1}:</label>
+                    <input type="number" name="supply_${i}" class="form-control" min="0" step="0.01" value="100" required>
+                `;
+                supplyContainer.appendChild(col);
+            }
+            const demandContainer = document.getElementById('demand-container');
+            demandContainer.innerHTML = '';
+            for (let j = 0; j < destinations; j++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-2';
+                col.innerHTML = `
+                    <label class="form-label">Destination ${j+1}:</label>
+                    <input type="number" name="demand_${j}" class="form-control" min="0" step="0.01" value="75" required>
+                `;
+                demandContainer.appendChild(col);
+            }
+            const costTable = document.getElementById('cost-table');
+            
+            costTable.querySelector('thead tr').innerHTML = '<th></th>';
+            costTable.querySelector('tbody').innerHTML = '';
+            
+            const headerRow = costTable.querySelector('thead tr');
+            for (let j = 0; j < destinations; j++) {
+                const th = document.createElement('th');
+                th.textContent = `Dest ${j+1}`;
+                headerRow.appendChild(th);
+            }
+            const tbody = costTable.querySelector('tbody');
+            for (let i = 0; i < sources; i++) {
+                const tr = document.createElement('tr');
+                
+                const th = document.createElement('th');
+                th.textContent = `Source ${i+1}`;
+                tr.appendChild(th);
+                
+                for (let j = 0; j < destinations; j++) {
+                    const td = document.createElement('td');
+                    
+                    td.innerHTML = `<input type="number" name="cost_${i}_${j}" class="form-control" min="0" step="0.01" value="${Math.floor(Math.random() * 20) + 5}" required>`;
+                    tr.appendChild(td);
+                }
+                
+                tbody.appendChild(tr);
+            }
+            document.getElementById('problem-table').style.display = 'block';
+        });
+    </script>
+</body>
+</html> -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transportation Problem - Mathematical Programming Optimizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .cost-table td input {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Transportation Problem</li>
+            </ol>
+        </nav>
+        
+        <header class="text-center mb-5">
+            <h1 class="display-4">Transportation Problem</h1>
+            <p class="lead">Optimize the distribution of goods from sources to destinations</p>
+        </header>
+        
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" id="transportation-form">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="sources" class="form-label">Number of Sources:</label>
+                            <input type="number" id="sources" name="sources" class="form-control" min="1" max="10" value="3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="destinations" class="form-label">Number of Destinations:</label>
+                            <input type="number" id="destinations" name="destinations" class="form-control" min="1" max="10" value="4" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" id="generate-table" class="btn btn-outline-primary">Generate Table</button>
+                    </div>
+                    
+                    <div id="problem-table" style="display: none;">
+                        <div class="mb-4">
+                            <h5>Supply</h5>
+                            <div id="supply-container" class="row"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Demand</h5>
+                            <div id="demand-container" class="row"></div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Transportation Costs</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered cost-table" id="cost-table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <!-- Destination headers will be added dynamically -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Cost cells will be added dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Solve Problem</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Example</h5>
+            </div>
+            <div class="card-body">
+                <p>A company has 3 warehouses (sources) and needs to supply 4 retail stores (destinations).</p>
+                <p>Each warehouse has a limited supply, and each store has a specific demand.</p>
+                <p>The cost of shipping from each warehouse to each store varies.</p>
+                <p>The goal is to minimize the total transportation cost while meeting all demands.</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p>Mathematical Programming Optimizer &copy; 2025</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('generate-table').addEventListener('click', function() {
+            const sources = parseInt(document.getElementById('sources').value);
+            const destinations = parseInt(document.getElementById('destinations').value);
+            
+            if (sources < 1 || destinations < 1 || sources > 10 || destinations > 10) {
+                alert('Please enter valid numbers (1-10) for sources and destinations.');
+                return;
+            }
+            
+            // Generate supply inputs
+            const supplyContainer = document.getElementById('supply-container');
+            supplyContainer.innerHTML = '';
+            for (let i = 0; i < sources; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-2';
+                col.innerHTML = `
+                    <label class="form-label">Source ${i+1}:</label>
+                    <input type="number" name="supply_${i}" class="form-control" min="0" step="0.01" value="100" required>
+                `;
+                supplyContainer.appendChild(col);
+            }
+            
+            // Generate demand inputs
+            const demandContainer = document.getElementById('demand-container');
+            demandContainer.innerHTML = '';
+            for (let j = 0; j < destinations; j++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-2';
+                col.innerHTML = `
+                    <label class="form-label">Destination ${j+1}:</label>
+                    <input type="number" name="demand_${j}" class="form-control" min="0" step="0.01" value="75" required>
+                `;
+                demandContainer.appendChild(col);
+            }
+            
+            // Generate cost table
+            const costTable = document.getElementById('cost-table');
+            
+            // Clear existing table
+            costTable.querySelector('thead tr').innerHTML = '<th></th>';
+            costTable.querySelector('tbody').innerHTML = '';
+            
+            // Add destination headers
+            const headerRow = costTable.querySelector('thead tr');
+            for (let j = 0; j < destinations; j++) {
+                const th = document.createElement('th');
+                th.textContent = `Dest ${j+1}`;
+                headerRow.appendChild(th);
+            }
+            
+            // Add cost cells
+            const tbody = costTable.querySelector('tbody');
+            for (let i = 0; i < sources; i++) {
+                const tr = document.createElement('tr');
+                
+                // Add source label
+                const th = document.createElement('th');
+                th.textContent = `Source ${i+1}`;
+                tr.appendChild(th);
+                
+                // Add cost inputs
+                for (let j = 0; j < destinations; j++) {
+                    const td = document.createElement('td');
+                    
+                    td.innerHTML = `<input type="number" name="cost_${i}_${j}" class="form-control" min="0" step="0.01" value="${Math.floor(Math.random() * 20) + 5}" required>`;
+                    tr.appendChild(td);
+                }
+                
+                tbody.appendChild(tr);
+            }
+            
+            // Show the problem table
+            document.getElementById('problem-table').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
